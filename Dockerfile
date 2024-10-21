@@ -1,16 +1,19 @@
-# Use the official .NET runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:3.1 AS base
 WORKDIR /app
-EXPOSE 80
+EXPOSE 80/tcp
 
-# Use the official .NET SDK image to build the application
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:3.1 AS build
 WORKDIR /src
+COPY ["TestApi.csproj", "./"]
+RUN dotnet restore "TestApi.csproj"
 COPY . .
-RUN dotnet publish -c Release -o /app
+WORKDIR "/src/."
+RUN dotnet build "TestApi.csproj" -c Release -o /app/build
 
-# Copy the build output to the runtime image
+FROM build AS publish
+RUN dotnet publish "TestApi.csproj" -c Release -o /app/publish
+
 FROM base AS final
 WORKDIR /app
-COPY --from=build /app .
-ENTRYPOINT ["dotnet", "YourApp.dll"]
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "TestApi.dll"]
