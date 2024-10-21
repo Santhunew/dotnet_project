@@ -1,22 +1,16 @@
-# Use the official .NET SDK image to build the application
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+# Use the official .NET runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
 WORKDIR /app
-
-# Copy the .csproj file and restore any dependencies
-COPY *.csproj ./
-RUN dotnet restore
-
-# Copy the rest of the application code
-COPY . ./
-RUN dotnet publish -c Release -o out
-
-# Use the official .NET runtime image to run the application
-FROM mcr.microsoft.com/dotnet/aspnet:6.0
-WORKDIR /app
-COPY --from=build /app/out .
-
-# Expose the port the application runs on
 EXPOSE 80
 
-# Run the application
+# Use the official .NET SDK image to build the application
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+WORKDIR /src
+COPY . .
+RUN dotnet publish -c Release -o /app
+
+# Copy the build output to the runtime image
+FROM base AS final
+WORKDIR /app
+COPY --from=build /app .
 ENTRYPOINT ["dotnet", "YourApp.dll"]
