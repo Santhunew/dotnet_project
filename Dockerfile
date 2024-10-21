@@ -1,12 +1,22 @@
-FROM microsoft/dotnet:2.1-sdk AS builder
-WORKDIR /source
+# Use the official .NET SDK image to build the application
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+WORKDIR /app
 
-COPY . .
-RUN dotnet restore dotnetKonf.Web/dotnetKonf.Web.csproj
-RUN dotnet publish dotnetKonf.Web/dotnetKonf.Web.csproj --output /dotnetkonf/ --configuration release
+# Copy the .csproj file and restore any dependencies
+COPY *.csproj ./
+RUN dotnet restore
 
-FROM microsoft/dotnet:2.1-aspnetcore-runtime
-WORKDIR /dotnetkonf
-COPY --from=builder /dotnetkonf .
+# Copy the rest of the application code
+COPY . ./
+RUN dotnet publish -c Release -o out
 
-ENTRYPOINT ["dotnet", "dotnetKonf.Web.dll"]
+# Use the official .NET runtime image to run the application
+FROM mcr.microsoft.com/dotnet/aspnet:6.0
+WORKDIR /app
+COPY --from=build /app/out .
+
+# Expose the port the application runs on
+EXPOSE 80
+
+# Run the application
+ENTRYPOINT ["dotnet", "YourApp.dll"]
